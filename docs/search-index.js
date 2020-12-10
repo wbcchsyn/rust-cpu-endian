@@ -1,0 +1,4 @@
+var searchIndex = JSON.parse('{\
+"cpu_endian":{"doc":"cpu-endian`cpu-endian` is a portable crate to detect CPU…","i":[[4,"Endian","cpu_endian","Byte order of scalar types.",null,null],[13,"Little","","little-endian",0,null],[13,"Big","","big-endian",0,null],[13,"Minor","","Neither little-endian nor big-endian. For example,…",0,null],[5,"working","","Returns the CPU byte order.",null,[[],["endian",4]]],[11,"from","","",0,[[]]],[11,"into","","",0,[[]]],[11,"to_owned","","",0,[[]]],[11,"clone_into","","",0,[[]]],[11,"borrow","","",0,[[]]],[11,"borrow_mut","","",0,[[]]],[11,"try_from","","",0,[[],["result",4]]],[11,"try_into","","",0,[[],["result",4]]],[11,"type_id","","",0,[[],["typeid",3]]],[11,"clone","","",0,[[],["endian",4]]],[11,"eq","","",0,[[["endian",4]]]],[11,"fmt","","",0,[[["formatter",3]],["result",6]]]],"p":[[4,"Endian"]]}\
+}');
+addSearchOptions(searchIndex);initSearch(searchIndex);

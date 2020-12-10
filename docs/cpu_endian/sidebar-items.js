@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Endian","Byte order of scalar types."]],"fn":[["working","Returns the CPU byte order."]]});
