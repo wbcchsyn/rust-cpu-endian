@@ -70,3 +70,15 @@
 #![deny(missing_docs)]
 
 //! # cpu_endian
+
+use std::os::raw::c_int;
+
+#[link(name = "native_endian_")]
+extern "C" {
+    /// Returns the cpu native endian.
+    ///
+    /// - Little endian: 1
+    /// - Big endian: 2
+    /// - Other: 3
+    fn native_() -> c_int;
+}
