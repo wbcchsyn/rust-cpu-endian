@@ -1,5 +1,9 @@
 extern crate cc;
 
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+fn main() {}
+
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 fn main() {
     cc::Build::new()
         .cpp(true)
