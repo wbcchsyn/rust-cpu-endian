@@ -179,6 +179,20 @@
 <span id="176">176</span>
 <span id="177">177</span>
 <span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2020 Shin Yoshida</span>
 <span class="comment">//</span>
@@ -255,10 +269,7 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! `cpu-endian` is a portable crate to detect CPU byte order.</span>
 <span class="doccomment">//!</span>
-<span class="doccomment">//! ## Feature</span>
-<span class="doccomment">//!</span>
-<span class="doccomment">//! - Enable to detect scalar is ordered in little-endian, big-endian, and the other minor endians (like PDP-endian, mixed-endian, middle-endian, and so on.)</span>
-<span class="doccomment">//! - Checks dynamically when first asked and cache the result. Some CPUs switches the endian, however, it will never changed while the process is running.</span>
+<span class="doccomment">//! It detects how CPU native scalar type is ordered; little-endian or big-endian, or something else (like PDP-endian, mixed-endian, middle-endian, and so on.)</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Examples</span>
 <span class="doccomment">//!</span>
@@ -282,8 +293,7 @@
 <span class="doccomment">//! }</span>
 <span class="doccomment">//! ```</span>
 
-<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">sync</span>::<span class="ident">atomic</span>::{<span class="ident">AtomicU8</span>, <span class="ident">Ordering</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">os</span>::<span class="ident">raw</span>::<span class="ident">c_int</span>;
+<span class="kw">use</span> <span class="ident">core</span>::<span class="ident">cell</span>::<span class="ident">Cell</span>;
 
 <span class="doccomment">/// Byte order of scalar types.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
@@ -297,17 +307,14 @@
     <span class="ident">Minor</span>,
 }
 
-<span class="doccomment">/// Cache of native_().</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Some CPUs change the byte order, however I don&#39;t think none of them changes it after process started.</span>
-<span class="kw">static</span> <span class="ident">NATIVE</span>: <span class="ident">AtomicU8</span> <span class="op">=</span> <span class="ident">AtomicU8</span>::<span class="ident">new</span>(<span class="number">0</span>);
+<span class="macro">thread_local</span><span class="macro">!</span>(
+    <span class="doccomment">/// Cache of native_().</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Some CPUs change the byte order, however I don&#39;t think none of them changes it after process started.</span>
+    <span class="kw">static</span> <span class="ident">CACHE</span>: <span class="ident">Cell</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Cell</span>::<span class="ident">new</span>(<span class="number">0</span>)
+);
 
 <span class="doccomment">/// Returns the CPU byte order.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// Some CPUs change the byte order, however, it won&#39;t be changed while process is running.</span>
-<span class="doccomment">///</span>
-<span class="doccomment">/// This function checks the byte order dynamically and caches it when first called.</span>
-<span class="doccomment">/// After that, this function returns the cache.</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// ```</span>
 <span class="doccomment">/// use cpu_endian::*;</span>
@@ -320,7 +327,7 @@
 <span class="doccomment">///     *ptr</span>
 <span class="doccomment">/// };</span>
 <span class="doccomment">///</span>
-<span class="doccomment">/// // If the byte-order is little-endian, the first octet should be 0xff, or if big-endian, the</span>
+<span class="doccomment">/// // If the byte-order is little-endian, the first octet should be 0xff, or if big-endian,</span>
 <span class="doccomment">/// // it should be 0x00.</span>
 <span class="doccomment">/// match working() {</span>
 <span class="doccomment">///     Endian::Little =&gt; assert_eq!(0xff, first_octet),</span>
@@ -330,27 +337,48 @@
 <span class="doccomment">/// ```</span>
 <span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">working</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Endian</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">cache</span> <span class="op">=</span> <span class="ident">NATIVE</span>.<span class="ident">load</span>(<span class="ident">Ordering</span>::<span class="ident">Relaxed</span>);
+    <span class="ident">inner_working</span>()
+}
 
+<span class="doccomment">/// Implementation for `working` .</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This function is only for `x86` and `x86_64` architecture, and const function to return</span>
+<span class="doccomment">/// `Endian::Little` . ( `x86` and `x86_64` are typical little-endian CPU.)</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86&quot;</span>, <span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86_64&quot;</span>))]</span>
+<span class="kw">const</span> <span class="kw">fn</span> <span class="ident">inner_working</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Endian</span> {
+    <span class="ident">Endian</span>::<span class="ident">Little</span>
+}
+
+<span class="doccomment">/// Implementation for `working` .</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// This function is for CPUs but `x86` nor `x86_64` and calls C function to detect the endian.</span>
+<span class="doccomment">/// (Some CPUs can switch the endian, so it is difficult to hard cord.)</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">any</span>(<span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86&quot;</span>, <span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86_64&quot;</span>)))]</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
+<span class="kw">fn</span> <span class="ident">inner_working</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Endian</span> {
     <span class="comment">// No cache is hit.</span>
     <span class="comment">// Because native()_ always returns the same value, Ordering::Relaxed will do.</span>
-    <span class="kw">if</span> <span class="ident">cache</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+    <span class="kw">if</span> <span class="ident">CACHE</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">get</span>()) <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
         <span class="kw">let</span> <span class="ident">order</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">native_</span>() };
         <span class="macro">debug_assert_ne</span><span class="macro">!</span>(<span class="number">0</span>, <span class="ident">order</span>);
 
-        <span class="ident">cache</span> <span class="op">=</span> <span class="ident">order</span> <span class="kw">as</span> <span class="ident">u8</span>;
-        <span class="ident">NATIVE</span>.<span class="ident">store</span>(<span class="ident">cache</span>, <span class="ident">Ordering</span>::<span class="ident">Relaxed</span>);
+        <span class="ident">CACHE</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">set</span>(<span class="ident">order</span> <span class="kw">as</span> <span class="ident">u8</span>));
     }
 
-    <span class="kw">match</span> <span class="ident">cache</span> {
+    <span class="kw">match</span> <span class="ident">CACHE</span>.<span class="ident">with</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">c</span>.<span class="ident">get</span>()) {
         <span class="number">1</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Endian</span>::<span class="ident">Little</span>,
         <span class="number">2</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Endian</span>::<span class="ident">Big</span>,
         <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Endian</span>::<span class="ident">Minor</span>,
     }
 }
 
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">any</span>(<span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86&quot;</span>, <span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86_64&quot;</span>)))]</span>
+<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">os</span>::<span class="ident">raw</span>::<span class="ident">c_int</span>;
+
 <span class="attribute">#[<span class="ident">link</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;native_endian_&quot;</span>)]</span>
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">any</span>(<span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86&quot;</span>, <span class="ident">target_arch</span> <span class="op">=</span> <span class="string">&quot;x86_64&quot;</span>)))]</span>
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
+
     <span class="doccomment">/// Returns the cpu native endian.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// - Little endian: 1</span>
