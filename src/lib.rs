@@ -71,6 +71,7 @@
 
 //! # cpu_endian
 
+use core::sync::atomic::{AtomicU8, Ordering};
 use std::os::raw::c_int;
 
 /// Byte order of scalar types.
@@ -83,6 +84,58 @@ pub enum Endian {
     /// Neither little-endian nor big-endian. For example, PDP-endian, mixed-endian, middle-endian, and so on.
     /// (Such endian is very rare today.)
     Minor,
+}
+
+/// Cache of native_().
+///
+/// Some CPUs change the byte order, however I don't think none of them changes it after process started.
+static NATIVE: AtomicU8 = AtomicU8::new(0);
+
+/// Returns the CPU byte order.
+///
+/// Some CPUs change the byte order, however, it won't be changed while process is running.
+///
+/// This function checks the byte order dynamically and caches it when first called.
+/// After that, this function returns the cache.
+///
+/// ```
+/// use cpu_endian::*;
+///
+/// // Takes first octet of 0x00ff: u16.
+/// let v: u16 = 0x00ff;
+/// let first_octet: u8 = unsafe {
+///     let ptr = &v as *const u16;
+///     let ptr = ptr as *const u8;
+///     *ptr
+/// };
+///
+/// // If the byte-order is little-endian, the first octet should be 0xff, or if big-endian, the
+/// // it should be 0x00.
+/// match working() {
+///     Endian::Little => assert_eq!(0xff, first_octet),
+///     Endian::Big => assert_eq!(0x00, first_octet),
+///     _ => {},
+/// }
+/// ```
+#[inline]
+pub fn working() -> Endian {
+    let mut cache = NATIVE.load(Ordering::Relaxed);
+
+    // No cache is hit.
+    // Because native()_ always returns the same value, Ordering::Relaxed will do.
+    if cache == 0 {
+        let order = unsafe { native_() };
+        debug_assert_ne!(0, order);
+
+        cache = order as u8;
+        NATIVE.store(cache, Ordering::Relaxed);
+    }
+
+    match cache {
+        1 => Endian::Little,
+        2 => Endian::Big,
+        _ => Endian::Minor,
+    }
 }
 
 #[link(name = "native_endian_")]
