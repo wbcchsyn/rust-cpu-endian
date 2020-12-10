@@ -6,7 +6,23 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+description = """
+`cpu-endian` is a portable crate to detect CPU byte order.
+
+The main feature is as follows.
+
+- Enable to detect scalar is ordered in little-endian, big-endian, and the other minor endians (like PDP-endian, mixed-endian, middle-endian, and so on.)
+- Checks dynamically when first asked and cache the result. Some CPUs switch the endian, however, it will never be changed while the process is running.
+"""
+
+readme = "README.md"
+keywords = ["endian", "byte-order", "little-endian", "big-endian"]
+documentation = "https://wbcchsyn.github.io/rust-cpu-endian/cpu_endian/index.html"
+
 license = "LGPL-3.0-or-later OR Apache-2.0 OR BSD-2-Clause OR MIT"
+
+repository = "https://github.com/wbcchsyn/rust-cpu-endian.git"
+categories = ["os"]
 
 [dependencies]
 
