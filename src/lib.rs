@@ -73,6 +73,18 @@
 
 use std::os::raw::c_int;
 
+/// Byte order of scalar types.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Endian {
+    /// little-endian
+    Little,
+    /// big-endian
+    Big,
+    /// Neither little-endian nor big-endian. For example, PDP-endian, mixed-endian, middle-endian, and so on.
+    /// (Such endian is very rare today.)
+    Minor,
+}
+
 #[link(name = "native_endian_")]
 extern "C" {
     /// Returns the cpu native endian.
