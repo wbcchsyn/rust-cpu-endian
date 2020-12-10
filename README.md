@@ -2,10 +2,7 @@
 
 `cpu-endian` is a portable crate to detect CPU byte order.
 
-## Feature
-
-- Enable to detect scalar is ordered in little-endian, big-endian, and the other minor endians (like PDP-endian, mixed-endian, middle-endian, and so on.)
-- Checks dynamically when first asked and cache the result. Some CPUs switch the endian, however, it will never be changed while the process is running.
+It detects how CPU native scalar type is ordered; little-endian or big-endian, or something else (like PDP-endian, mixed-endian, middle-endian, and so on.)
 
 ## Examples
 
@@ -31,4 +28,4 @@ match working() {
 
 ## Requirements
 
-This crate requires C++ compiler supporting c++20.
+This crate requires C++ compiler with feature c++20.

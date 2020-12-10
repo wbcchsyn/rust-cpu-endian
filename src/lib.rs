@@ -73,10 +73,7 @@
 //!
 //! `cpu-endian` is a portable crate to detect CPU byte order.
 //!
-//! ## Feature
-//!
-//! - Enable to detect scalar is ordered in little-endian, big-endian, and the other minor endians (like PDP-endian, mixed-endian, middle-endian, and so on.)
-//! - Checks dynamically when first asked and cache the result. Some CPUs switch the endian, however, it will never be changed while the process is running.
+//! It detects how CPU native scalar type is ordered; little-endian or big-endian, or something else (like PDP-endian, mixed-endian, middle-endian, and so on.)
 //!
 //! ## Examples
 //!
@@ -121,11 +118,6 @@ pub enum Endian {
 static NATIVE: AtomicU8 = AtomicU8::new(0);
 
 /// Returns the CPU byte order.
-///
-/// Some CPUs switch the byte order, however, it won't be changed while process is running.
-///
-/// This function checks the byte order dynamically and caches it when first called.
-/// After that, this function returns the cache.
 ///
 /// ```
 /// use cpu_endian::*;
