@@ -97,8 +97,7 @@
 //! }
 //! ```
 
-use core::sync::atomic::{AtomicU8, Ordering};
-use std::os::raw::c_int;
+use core::cell::Cell;
 
 /// Byte order of scalar types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -112,10 +111,12 @@ pub enum Endian {
     Minor,
 }
 
-/// Cache of native_().
-///
-/// Some CPUs change the byte order, however I don't think none of them changes it after process started.
-static NATIVE: AtomicU8 = AtomicU8::new(0);
+thread_local!(
+    /// Cache of native_().
+    ///
+    /// Some CPUs change the byte order, however I don't think none of them changes it after process started.
+    static CACHE: Cell<u8> = Cell::new(0)
+);
 
 /// Returns the CPU byte order.
 ///
@@ -140,27 +141,48 @@ static NATIVE: AtomicU8 = AtomicU8::new(0);
 /// ```
 #[inline]
 pub fn working() -> Endian {
-    let mut cache = NATIVE.load(Ordering::Relaxed);
+    inner_working()
+}
 
+/// Implementation for `working` .
+///
+/// This function is only for `x86` and `x86_64` architecture, and const function to return
+/// `Endian::Little` . ( `x86` and `x86_64` are typical little-endian CPU.)
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+const fn inner_working() -> Endian {
+    Endian::Little
+}
+
+/// Implementation for `working` .
+///
+/// This function is for CPUs but `x86` nor `x86_64` and calls C function to detect the endian.
+/// (Some CPUs can switch the endian, so it is difficult to hard cord.)
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+#[inline]
+fn inner_working() -> Endian {
     // No cache is hit.
     // Because native()_ always returns the same value, Ordering::Relaxed will do.
-    if cache == 0 {
+    if CACHE.with(|c| c.get()) == 0 {
         let order = unsafe { native_() };
         debug_assert_ne!(0, order);
 
-        cache = order as u8;
-        NATIVE.store(cache, Ordering::Relaxed);
+        CACHE.with(|c| c.set(order as u8));
     }
 
-    match cache {
+    match CACHE.with(|c| c.get()) {
         1 => Endian::Little,
         2 => Endian::Big,
         _ => Endian::Minor,
     }
 }
 
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+use std::os::raw::c_int;
+
 #[link(name = "native_endian_")]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 extern "C" {
+
     /// Returns the cpu native endian.
     ///
     /// - Little endian: 1

@@ -28,4 +28,4 @@ match working() {
 
 ## Requirements
 
-This crate requires C++ compiler supporting c++20.
+If the CPU is neither `x86` nor `x86_64` , C++ compiler with feature c++20 is required.
