@@ -1,6 +1,6 @@
 [package]
 name = "cpu-endian"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Yoshida Shin <wbcchsyn@gmail.com>"]
 edition = "2018"
 
@@ -9,10 +9,7 @@ edition = "2018"
 description = """
 `cpu-endian` is a portable crate to detect CPU byte order.
 
-The main feature is as follows.
-
-- Enable to detect scalar is ordered in little-endian, big-endian, and the other minor endians (like PDP-endian, mixed-endian, middle-endian, and so on.)
-- Checks dynamically when first asked and cache the result. Some CPUs switch the endian, however, it will never be changed while the process is running.
+It detects how CPU native scalar type is ordered; little-endian or big-endian, or something else (like PDP-endian, mixed-endian, middle-endian, and so on.)
 """
 
 readme = "README.md"
