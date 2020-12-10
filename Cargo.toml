@@ -9,3 +9,6 @@ edition = "2018"
 license = "LGPL-3.0-or-later OR Apache-2.0 OR BSD-2-Clause OR MIT"
 
 [dependencies]
+
+[build-dependencies]
+cc = "1.0"
