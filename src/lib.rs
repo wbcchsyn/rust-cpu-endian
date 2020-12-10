@@ -142,6 +142,12 @@ thread_local!(
 /// ```
 #[inline]
 pub fn working() -> Endian {
+    inner_working()
+}
+
+/// Implementation for `working` .
+#[inline]
+fn inner_working() -> Endian {
     // No cache is hit.
     // Because native()_ always returns the same value, Ordering::Relaxed will do.
     if CACHE.with(|c| c.get()) == 0 {
