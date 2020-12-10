@@ -98,7 +98,6 @@
 //! ```
 
 use core::cell::Cell;
-use std::os::raw::c_int;
 
 /// Byte order of scalar types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -146,6 +145,19 @@ pub fn working() -> Endian {
 }
 
 /// Implementation for `working` .
+///
+/// This function is only for `x86` and `x86_64` architecture, and const function to return
+/// `Endian::Little` . ( `x86` and `x86_64` are typical little-endian CPU.)
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+const fn inner_working() -> Endian {
+    Endian::Little
+}
+
+/// Implementation for `working` .
+///
+/// This function is for CPUs but `x86` nor `x86_64` and calls C function to detect the endian.
+/// (Some CPUs can switch the endian, so it is difficult to hard cord.)
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 #[inline]
 fn inner_working() -> Endian {
     // No cache is hit.
@@ -164,8 +176,13 @@ fn inner_working() -> Endian {
     }
 }
 
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+use std::os::raw::c_int;
+
 #[link(name = "native_endian_")]
+#[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 extern "C" {
+
     /// Returns the cpu native endian.
     ///
     /// - Little endian: 1
